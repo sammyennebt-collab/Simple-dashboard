@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sammy's Dashboard</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU2FtbXkncyBEYXNoYm9hcmQiLCJzaG9ydF9uYW1lIjoiRGFzaGJvYXJkIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJ0aGVtZV9jb2xvciI6IiMwMDAwMDAiLCJpY29ucyI6W119">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000;--surface:#080808;--border:#1a1a1a;
+  --green:#00e676;--red:#ff3b5c;--amber:#ffb800;--blue:#4d9fff;--cyan:#00d4ff;
+  --text:#e0e0e0;--text-dim:#888;--text-bright:#fff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;overflow-x:hidden;min-height:100vh}
+.mono{font-family:'Space Mono',monospace}
+
+.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-left{display:flex;align-items:center;gap:14px}
+.live-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.35;box-shadow:0 0 2px var(--green)}}
+.header-title{font-size:15px;font-weight:700;letter-spacing:3px;color:var(--text-bright)}
+.header-right{display:flex;align-items:center;gap:6px}
+.header-right .mono{font-size:13px}
+.clock-time{color:var(--green);font-weight:700}
+.clock-label{color:var(--text-dim);margin-left:6px}
+.header-sep{color:var(--border);margin:0 8px}
+.countdown{color:var(--cyan)}
+
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding:20px 28px;min-height:calc(100vh - 56px)}
+.col{display:flex;flex-direction:column;gap:14px}
+
+.section-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-hdr h2{font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
+.pill{font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:3px;text-transform:uppercase}
+.pill-green{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25)}
+.pill-cyan{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}
+.pill-red{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.2)}
+.pill-amber{background:rgba(255,184,0,.1);color:var(--amber);border:1px solid rgba(255,184,0,.2)}
+
+.sport-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:6px;padding:14px 16px;transition:border-color .2s}
+.sport-card:hover{border-color:#333;border-left-color:var(--green)}
+.sport-card.is-live{border-left-color:var(--red)}
+.sport-card.is-ft{border-left-color:var(--text-dim)}
+.sport-label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.sport-label .dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse-red 1.4s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.25}}
+.sport-label span{color:var(--green)}
+.sport-label.live-label span{color:var(--red)}
+.sport-title{font-size:15px;font-weight:600;color:var(--text-bright);margin-bottom:3px}
+.sport-sub{font-size:12px;color:var(--text-dim);display:flex;justify-content:space-between;align-items:center}
+.sport-action{color:var(--cyan);font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;text-decoration:none}
+.sport-score-line{display:flex;align-items:center;gap:12px;margin:8px 0 2px}
+.sport-score-line .team{font-size:14px;font-weight:500;color:var(--text);flex:1}
+.sport-score-line .team.away{text-align:right}
+.sport-score-line .score{font-size:22px;font-weight:700;color:var(--text-bright);min-width:70px;text-align:center}
+.sport-detail{font-size:11px;color:var(--text-dim);text-align:center;margin-top:2px}
+
+.fixture-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:6px;padding:12px 16px}
+.fixture-comp{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+.fixture-teams{font-size:14px;font-weight:600;color:var(--text-bright)}
+.fixture-teams span{font-weight:400;color:var(--text-dim);font-size:12px;margin:0 4px}
+.fixture-meta{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.fixture-time{font-size:12px;color:var(--amber)}
+.fixture-venue{font-size:11px;color:var(--text-dim);font-style:italic}
+
+.result-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--text-dim);border-radius:6px;padding:12px 16px}
+
+.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.market-tile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden}
+.market-tile::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.market-tile.up::after{background:var(--green)}.market-tile.up{border-color:rgba(0,230,118,.12)}
+.market-tile.down::after{background:var(--red)}.market-tile.down{border-color:rgba(255,59,92,.12)}
+.market-tile.flat::after{background:var(--amber)}.market-tile.flat{border-color:rgba(255,184,0,.08)}
+.market-name{font-size:11px;color:var(--text-dim);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.market-price{font-size:20px;font-weight:700;color:var(--text-bright)}
+.market-change{font-size:12px;margin-top:4px}
+.market-change.up{color:var(--green)}.market-change.down{color:var(--red)}.market-change.flat{color:var(--amber)}
+.market-updated{font-size:10px;color:var(--text-dim);text-align:right;margin-bottom:6px}
+
+.bloom-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:baseline}
+.bloom-item:last-child{border-bottom:none}
+.bloom-num{font-size:12px;font-weight:700;color:var(--cyan);min-width:22px;flex-shrink:0}
+.bloom-headline{font-size:13px;color:var(--text);text-decoration:none;line-height:1.4}
+.bloom-headline:hover{color:var(--text-bright)}
+.bloom-time{font-size:10px;color:var(--text-dim);margin-top:2px}
+
+.news-item{padding:8px 0 8px 12px;border-bottom:1px solid var(--border);position:relative}
+.news-item:last-child{border-bottom:none}
+.news-item::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px}
+.news-item.src-aj::before{background:var(--red)}
+.news-item.src-iran::before{background:var(--amber)}
+.news-item.src-abc::before{background:var(--cyan)}
+.news-headline{font-size:13px;color:var(--text);text-decoration:none;display:block;line-height:1.45}
+.news-headline:hover{color:var(--text-bright)}
+.news-time{font-size:10px;color:var(--text-dim);margin-top:3px}
+
+.loading{color:var(--text-dim);font-size:12px;padding:16px 0;text-align:center}
+.feed-error{color:var(--red);font-size:12px;padding:8px 0;opacity:.8}
+
+@media(max-width:1200px){.grid{grid-template-columns:1fr 1fr}.col:nth-child(3){grid-column:span 2}}
+@media(max-width:768px){.grid{grid-template-columns:1fr}.col:nth-child(3){grid-column:span 1}.header{padding:12px 16px}.grid{padding:12px 16px}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="live-dot"></div>
+    <div class="header-title">SAMMY'S DASHBOARD</div>
+  </div>
+  <div class="header-right">
+    <span class="mono clock-time" id="clock-time"></span>
+    <span class="mono clock-label">ABU DHABI</span>
+    <span class="header-sep">|</span>
+    <span class="mono countdown" id="countdown"></span>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- COL 1: SPORTS -->
+  <div class="col">
+    <div class="section-hdr"><h2>Live Events</h2><span class="pill pill-green">LIVE PRIORITY</span></div>
+    <div id="sports-live"><div class="loading">Loading live scores…</div></div>
+    <div class="section-hdr"><h2>Today's Fixtures</h2><span class="pill pill-amber">BLOCKBUSTERS</span></div>
+    <div id="sports-upcoming"><div class="loading">Loading fixtures…</div></div>
+    <div class="section-hdr"><h2>Recent Results</h2><span class="pill pill-red">MY CLUBS</span></div>
+    <div id="sports-recent"><div class="loading">Loading results…</div></div>
+  </div>
+
+  <!-- COL 2: MARKETS + BUSINESS NEWS -->
+  <div class="col">
+    <div class="section-hdr"><h2>Macro Markets</h2><span class="pill pill-green">LIVE</span></div>
+    <div class="market-updated mono" id="market-updated">Loading…</div>
+    <div class="market-grid" id="market-grid">
+      <div class="market-tile flat"><div class="market-name">ASX 200</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+      <div class="market-tile flat"><div class="market-name">S&P 500</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+      <div class="market-tile flat"><div class="market-name">EURO STOXX 50</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+      <div class="market-tile flat"><div class="market-name">BRENT CRUDE</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+      <div class="market-tile flat"><div class="market-name">GOLD</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+      <div class="market-tile flat"><div class="market-name">BITCOIN</div><div class="market-price mono">—</div><div class="market-change flat mono">loading</div></div>
+    </div>
+    <div class="section-hdr" style="margin-top:8px"><h2>Business &amp; Markets</h2><span class="pill pill-cyan">LIVE RSS</span></div>
+    <div id="biz-news"><div class="loading">Loading business news…</div></div>
+  </div>
+
+  <!-- COL 3: BREAKING NEWS -->
+  <div class="col">
+    <div class="section-hdr"><h2>Al Jazeera</h2><span class="pill pill-red">LIVE RSS</span></div>
+    <div id="news-aj"><div class="loading">Loading…</div></div>
+    <div class="section-hdr"><h2>Iran Conflict</h2><span class="pill pill-red">LIVE</span></div>
+    <div id="news-iran"><div class="loading">Loading…</div></div>
+    <div class="section-hdr"><h2>ABC News Australia</h2><span class="pill pill-cyan">LIVE RSS</span></div>
+    <div id="news-abc"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+const GST = 4;
+function nowGST() { const d = new Date(); return new Date(d.getTime() + (GST*60+d.getTimezoneOffset())*60000); }
+function fmtTime(d) { return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }
+function fmtAMPM(d) { const h=d.getHours(),m=d.getMinutes(); return String(h%12||12).padStart(2,'0')+':'+String(m).padStart(2,'0')+' '+(h>=12?'pm':'am')+' GST'; }
+function relTime(ds) { const diff=Math.max(0,Date.now()-new Date(ds).getTime()),m=Math.floor(diff/60000); if(m<1)return'just now'; if(m<60)return m+'m ago'; const h=Math.floor(m/60); if(h<24)return h+'h ago'; return Math.floor(h/24)+'d ago'; }
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ============================================================
+// CLOCK + COUNTDOWN
+// ============================================================
+let refreshAt = Date.now() + 3600000;
+function tick() {
+  document.getElementById('clock-time').textContent = fmtTime(nowGST());
+  const r = Math.max(0, refreshAt - Date.now());
+  document.getElementById('countdown').textContent = 'REFRESH ' + String(Math.floor(r/60000)).padStart(2,'0') + ':' + String(Math.floor((r%60000)/1000)).padStart(2,'0');
+  if (r <= 0) location.reload();
+}
+setInterval(tick, 1000); tick();
+
+// ============================================================
+// PROXY CHAIN
+// ============================================================
+async function directFetch(url, ms=8000) {
+  const c = new AbortController(); const t = setTimeout(()=>c.abort(), ms);
+  try { const r = await fetch(url,{signal:c.signal}); clearTimeout(t); if(r.ok) return await r.text(); } catch(e){clearTimeout(t);} return null;
+}
+
+const PX = [
+  u => ({url:'https://api.allorigins.win/get?url='+encodeURIComponent(u), json:true}),
+  u => ({url:'https://api.allorigins.win/raw?url='+encodeURIComponent(u), json:false}),
+  u => ({url:'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u), json:false}),
+  u => ({url:'https://corsproxy.org/?'+encodeURIComponent(u), json:false}),
+  u => ({url:'https://api.cors.lol/?url='+encodeURIComponent(u), json:false}),
+];
+
+async function proxyFetch(url, ms=12000) {
+  const d = await directFetch(url, ms); if(d) return d;
+  for (const mk of PX) {
+    try {
+      const p=mk(url); const c=new AbortController(); const t=setTimeout(()=>c.abort(),ms);
+      const r=await fetch(p.url,{signal:c.signal}); clearTimeout(t); if(!r.ok) continue;
+      if(p.json){const j=await r.json(); if(j&&j.contents) return j.contents;}
+      else{const txt=await r.text(); if(txt&&txt.length>50) return txt;}
+    } catch(e){continue;}
+  }
+  return null;
+}
+
+function parseXML(t) { return new DOMParser().parseFromString(t,'text/xml'); }
+
+// ============================================================
+// SPORTS CONFIG — SAMMY'S TEAMS
+// ============================================================
+
+// Teams I support — used for fixture/result filtering
+// Precise matching to avoid false positives (e.g. 'bulldogs' alone catches Western Bulldogs AFL)
+const MY_TEAMS_EXACT = [
+  'sydney swans',
+  'canterbury bankstown bulldogs','canterbury-bankstown bulldogs','canterbury bankstown',
+  'tottenham hotspur','tottenham',
+  'ac milan',
+  'al hilal','al-hilal',
+  'sydney fc',
+];
+const MY_TEAMS_PARTIAL = [
+  'spurs',        // Tottenham shorthand
+  'socceroos','wallabies','kangaroos', // Australian national teams
+];
+
+// ESPN abbreviations for my teams
+// Note: 'CAN' omitted — ambiguous between Canterbury and Canberra Raiders
+const MY_ABBR = ['CBU','TOT','MIL','HIL','SYD','SWA','AUS'];
+
+function isMyTeam(name, abbr) {
+  const n = (name||'').toLowerCase();
+  const a = (abbr||'').toUpperCase();
+  // Check abbreviation
+  if (a && MY_ABBR.includes(a)) return true;
+  // Check exact/substring matches that are safe
+  if (MY_TEAMS_EXACT.some(t => n.includes(t))) return true;
+  // Check short aliases
+  if (MY_TEAMS_PARTIAL.some(t => n.includes(t))) return true;
+  // Canterbury NRL: every possible variant
+  if (n.includes('canterbury') || n.includes('bankstown') || (n.includes('bulldogs') && !n.includes('western'))) return true;
+  // Sydney Swans AFL
+  if (n.includes('sydney swans') || (n.includes('swans') && !n.includes('west'))) return true;
+  // Australia national teams in cricket/rugby/football
+  if (n === 'australia' || n.startsWith('australia ') || n.endsWith(' australia')) return true;
+  // Al Hilal variants
+  if (n.includes('hilal')) return true;
+  return false;
+}
+
+// Top EPL clubs for "important match" detection
+const EPL_BIG = ['arsenal','manchester city','man city','liverpool','chelsea','manchester united','man utd','tottenham','spurs','newcastle'];
+function isImportantEPL(home, away) {
+  const h=(home||'').toLowerCase(), a=(away||'').toLowerCase();
+  const hBig = EPL_BIG.some(t=>h.includes(t));
+  const aBig = EPL_BIG.some(t=>a.includes(t));
+  return hBig && aBig; // both teams are big clubs
+}
+
+const ESPN_FEEDS = [
+  { tag:'NRL', comp:'NRL', url:'https://site.api.espn.com/apis/site/v2/sports/rugby-league/nrl/scoreboard', livePriority:true },
+  { tag:'AFL', comp:'AFL', url:'https://site.api.espn.com/apis/site/v2/sports/australian-football/afl/scoreboard', livePriority:false },
+  { tag:'EPL', comp:'Premier League', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard', livePriority:true },
+  { tag:'UCL', comp:'Champions League', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', livePriority:false },
+  { tag:'UEL', comp:'Europa League', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard', livePriority:false },
+  { tag:'SAUDI', comp:'Saudi Pro League', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/sau.1/scoreboard', livePriority:false },
+  { tag:'SERIE A', comp:'Serie A', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard', livePriority:false },
+  { tag:'A-LEAGUE', comp:'A-League', url:'https://site.api.espn.com/apis/site/v2/sports/soccer/aus.1/scoreboard', livePriority:false },
+  { tag:'NBA', comp:'NBA', url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', livePriority:false },
+  { tag:'CRICKET', comp:'Cricket', url:'https://site.api.espn.com/apis/site/v2/sports/cricket/scoreboard', livePriority:false },
+  { tag:'F1', comp:'Formula 1', url:'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard', livePriority:false },
+  { tag:'RUGBY', comp:'Rugby Union', url:'https://site.api.espn.com/apis/site/v2/sports/rugby/scoreboard', livePriority:false },
+];
+
+function parseEv(ev, feed) {
+  const comp = ev.competitions?.[0];
+  if (!comp) return null;
+  const teams = comp.competitors || [];
+  const home = teams.find(t=>t.homeAway==='home') || teams[0];
+  const away = teams.find(t=>t.homeAway==='away') || teams[1];
+  if (!home) return null;
+  const st = ev.status?.type;
+  return {
+    tag: feed.tag, comp: feed.comp, livePriority: feed.livePriority,
+    homeName: home.team?.displayName || home.team?.shortDisplayName || home.athlete?.displayName || '?',
+    homeAbbr: home.team?.abbreviation || '',
+    homeScore: home.score ?? '',
+    awayName: away ? (away.team?.displayName || away.team?.shortDisplayName || '?') : '',
+    awayAbbr: away ? (away.team?.abbreviation || '') : '',
+    awayScore: away ? (away.score ?? '') : '',
+    state: st?.state || 'pre',
+    detail: st?.shortDetail || st?.detail || '',
+    venue: comp.venue?.fullName || comp.venue?.shortName || '',
+    eventName: ev.name || ev.shortName || '',
+    date: ev.date,
+    link: ev.links?.[0]?.href || '',
+    isTeam: !!away,
+  };
+}
+
+async function fetchSports() {
+  const liveEl=document.getElementById('sports-live');
+  const upEl=document.getElementById('sports-upcoming');
+  const recentEl=document.getElementById('sports-recent');
+  const allEvents = [];
+
+  await Promise.allSettled(ESPN_FEEDS.map(async feed => {
+    try {
+      let text = await directFetch(feed.url, 8000);
+      if (!text) text = await proxyFetch(feed.url, 10000);
+      if (!text) return;
+      const data = JSON.parse(text);
+      for (const ev of (data.events||[])) {
+        const p = parseEv(ev, feed);
+        if (p) allEvents.push(p);
+      }
+    } catch(e){}
+  }));
+
+  // === LIVE: all NRL + all EPL + any match involving my teams + important EPL ===
+  const live = allEvents.filter(ev => {
+    if (ev.state !== 'in') return false;
+    if (ev.tag === 'NRL' || ev.tag === 'EPL') return true;
+    if (isMyTeam(ev.homeName, ev.homeAbbr) || isMyTeam(ev.awayName, ev.awayAbbr)) return true;
+    if (isImportantEPL(ev.homeName, ev.awayName)) return true;
+    if ((ev.tag==='CRICKET'||ev.tag==='RUGBY') && (isMyTeam(ev.homeName,ev.homeAbbr)||isMyTeam(ev.awayName,ev.awayAbbr))) return true;
+    return false;
+  });
+
+  // === FIXTURES: all UCL + my teams in any league ===
+  const fixtures = allEvents.filter(ev => {
+    if (ev.state !== 'pre') return false;
+    if (ev.tag === 'UCL') return true;
+    if (isMyTeam(ev.homeName, ev.homeAbbr) || isMyTeam(ev.awayName, ev.awayAbbr)) return true;
+    return false;
+  }).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // === RECENT: my teams + all UCL results ===
+  const recent = allEvents.filter(ev => {
+    if (ev.state !== 'post') return false;
+    if (ev.tag === 'UCL') return true;
+    if (isMyTeam(ev.homeName, ev.homeAbbr) || isMyTeam(ev.awayName, ev.awayAbbr)) return true;
+    return false;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  // If no team-specific live matches, fall back to ANY live event
+  if (live.length === 0) {
+    const anyLive = allEvents.filter(ev => ev.state === 'in');
+    if (anyLive.length > 0) live.push(...anyLive.slice(0, 8));
+  }
+
+  // RENDER LIVE
+  if (live.length === 0) {
+    liveEl.innerHTML = '<div class="loading">No live matches right now</div>';
+  } else {
+    liveEl.innerHTML = live.map(ev => {
+      if (ev.isTeam) {
+        return `<div class="sport-card is-live">
+          <div class="sport-label live-label"><div class="dot"></div><span>${esc(ev.tag)} &middot; ${esc(ev.comp)}</span></div>
+          <div class="sport-score-line">
+            <span class="team">${esc(ev.homeName)}</span>
+            <span class="score mono">${esc(String(ev.homeScore))} &mdash; ${esc(String(ev.awayScore))}</span>
+            <span class="team away">${esc(ev.awayName)}</span>
+          </div>
+          <div class="sport-detail">${esc(ev.detail)}</div>
+          ${ev.link?`<div class="sport-sub"><span></span><a href="${esc(ev.link)}" target="_blank" rel="noopener" class="sport-action">SCORES &rarr;</a></div>`:''}
+        </div>`;
+      } else {
+        return `<div class="sport-card is-live">
+          <div class="sport-label live-label"><div class="dot"></div><span>${esc(ev.tag)} &middot; ${esc(ev.comp)}</span></div>
+          <div class="sport-title">${esc(ev.eventName)}</div>
+          <div class="sport-sub"><span>${esc(ev.detail)}</span>${ev.link?`<a href="${esc(ev.link)}" target="_blank" rel="noopener" class="sport-action">SCORES &rarr;</a>`:''}</div>
+        </div>`;
+      }
+    }).join('');
+  }
+
+  // RENDER FIXTURES
+  if (fixtures.length === 0) {
+    upEl.innerHTML = '<div class="loading">No blockbuster fixtures today</div>';
+  } else {
+    upEl.innerHTML = fixtures.slice(0,12).map(ev => {
+      const d = new Date(ev.date);
+      const gstH = (d.getUTCHours()+GST)%24, gstM = d.getUTCMinutes();
+      const ts = String(gstH).padStart(2,'0')+':'+String(gstM).padStart(2,'0')+' GST';
+      if (ev.isTeam) {
+        return `<div class="fixture-card">
+          <div class="fixture-comp">${esc(ev.tag)} &middot; ${esc(ev.detail||ev.comp)}</div>
+          <div class="fixture-teams">${esc(ev.homeName)} <span>vs</span> ${esc(ev.awayName)}</div>
+          <div class="fixture-meta"><span class="fixture-time mono">${ts}</span><span class="fixture-venue">${esc(ev.venue)}</span></div>
+        </div>`;
+      } else {
+        return `<div class="fixture-card">
+          <div class="fixture-comp">${esc(ev.tag)} &middot; ${esc(ev.comp)}</div>
+          <div class="fixture-teams">${esc(ev.eventName)}</div>
+          <div class="fixture-meta"><span class="fixture-time mono">${ts}</span><span class="fixture-venue">${esc(ev.venue)}</span></div>
+        </div>`;
+      }
+    }).join('');
+  }
+
+  // RENDER RECENT
+  if (recent.length === 0) {
+    recentEl.innerHTML = '<div class="loading">No recent results for your clubs</div>';
+  } else {
+    recentEl.innerHTML = recent.slice(0,10).map(ev => renderResult(ev)).join('');
+  }
+}
+
+function renderResult(ev) {
+  if (ev.isTeam) {
+    return `<div class="result-card">
+      <div class="fixture-comp">${esc(ev.tag)} &middot; ${esc(ev.comp)}</div>
+      <div class="sport-score-line">
+        <span class="team">${esc(ev.homeName)}</span>
+        <span class="score mono" style="font-size:18px">${esc(String(ev.homeScore))} &mdash; ${esc(String(ev.awayScore))}</span>
+        <span class="team away">${esc(ev.awayName)}</span>
+      </div>
+      <div class="sport-sub"><span style="color:var(--text-dim)">${esc(ev.detail)}</span>${ev.link?`<a href="${esc(ev.link)}" target="_blank" rel="noopener" class="sport-action">Result</a>`:''}</div>
+    </div>`;
+  } else {
+    return `<div class="result-card">
+      <div class="fixture-comp">${esc(ev.tag)} &middot; ${esc(ev.comp)}</div>
+      <div class="sport-title" style="font-size:14px">${esc(ev.eventName)}</div>
+      <div class="sport-sub"><span style="color:var(--text-dim)">${esc(ev.detail)}</span></div>
+    </div>`;
+  }
+}
+
+// ============================================================
+// MARKETS — MULTI-SOURCE FALLBACK
+// ============================================================
+const TICKERS = [
+  {name:'ASX 200', sym:'^AXJO', fmpSym:'%5EAXJO', idx:0},
+  {name:'S&P 500', sym:'^GSPC', fmpSym:'%5EGSPC', idx:1},
+  {name:'EURO STOXX 50', sym:'^STOXX50E', fmpSym:'%5ESTOXX50E', idx:2},
+  {name:'BRENT CRUDE', sym:'BZ=F', fmpSym:'BZF', idx:3},
+  {name:'GOLD', sym:'GC=F', fmpSym:'GCF', idx:4},
+  {name:'BITCOIN', sym:'BTC-USD', fmpSym:'BTCUSD', idx:5},
+];
+
+function fmtPrice(p,idx) {
+  const n=Number(p);
+  if(idx===5) return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(idx===4||idx===3) return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function setTile(idx, price, pct) {
+  const tile = document.querySelectorAll('#market-grid .market-tile')[idx]; if(!tile) return;
+  const dir = pct>0.01?'up':pct<-0.01?'down':'flat';
+  tile.className='market-tile '+dir;
+  tile.querySelector('.market-price').textContent=fmtPrice(price,idx);
+  const chg=tile.querySelector('.market-change');
+  chg.className='market-change '+dir+' mono';
+  chg.textContent=(dir==='up'?'▲ ':dir==='down'?'▼ ':'— ')+(pct>0?'+':'')+pct.toFixed(2)+'%';
+}
+
+function setTileErr(idx) {
+  const tile=document.querySelectorAll('#market-grid .market-tile')[idx]; if(!tile) return;
+  tile.querySelector('.market-price').textContent='—';
+  const chg=tile.querySelector('.market-change');
+  chg.className='market-change flat mono'; chg.textContent='Unavailable';
+}
+
+// Source 1: Yahoo Finance v8 chart via proxy
+async function yahooChart(sym) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1d`;
+  const text = await proxyFetch(url, 12000);
+  if (!text) return null;
+  const data = JSON.parse(text);
+  const meta = data.chart?.result?.[0]?.meta;
+  if (!meta || !meta.regularMarketPrice) return null;
+  const price = meta.regularMarketPrice;
+  const prev = meta.chartPreviousClose || meta.previousClose;
+  return { price, pct: prev ? ((price-prev)/prev)*100 : 0 };
+}
+
+// Source 2: Yahoo Finance v6 quote via proxy
+async function yahooQuote(sym) {
+  const url = `https://query2.finance.yahoo.com/v6/finance/quote?symbols=${encodeURIComponent(sym)}`;
+  const text = await proxyFetch(url, 10000);
+  if (!text) return null;
+  const data = JSON.parse(text);
+  const q = data.quoteResponse?.result?.[0];
+  if (!q || !q.regularMarketPrice) return null;
+  return { price: q.regularMarketPrice, pct: q.regularMarketChangePercent || 0 };
+}
+
+// Source 3: Google Finance page scrape via proxy
+async function googleFinanceScrape(sym) {
+  // Map symbols to Google Finance format
+  const gfMap = {
+    '^AXJO': '.AXJO:INDEXASX', '^GSPC': '.INX:INDEXSP', '^STOXX50E': 'SX5E:INDEXSTOXX',
+    'BZ=F': 'BZ=F:NYMEX', 'GC=F': 'GC=F:COMEX',
+  };
+  const gSym = gfMap[sym];
+  if (!gSym) return null;
+  const url = `https://www.google.com/finance/quote/${gSym}`;
+  const html = await proxyFetch(url, 10000);
+  if (!html) return null;
+  // Parse price from data-last-price attribute
+  const m = html.match(/data-last-price="([^"]+)"/);
+  const m2 = html.match(/data-last-normal-market-change-percent="([^"]+)"/);
+  if (m) return { price: parseFloat(m[1]), pct: m2 ? parseFloat(m2[1]) : 0 };
+  return null;
+}
+
+// Source 4: FMP demo (very limited)
+async function fmpQuote(fmpSym) {
+  const url = `https://financialmodelingprep.com/api/v3/quote/${fmpSym}?apikey=demo`;
+  const text = await proxyFetch(url, 8000);
+  if (!text) return null;
+  try {
+    const arr = JSON.parse(text);
+    if (Array.isArray(arr) && arr[0]) return { price: arr[0].price, pct: arr[0].changesPercentage || 0 };
+  } catch(e) {}
+  return null;
+}
+
+async function fetchOneTicker(t) {
+  if (t.sym === 'BTC-USD') return fetchBTC();
+
+  // Try sources in order
+  let result = await yahooChart(t.sym).catch(()=>null);
+  if (result) { setTile(t.idx, result.price, result.pct); return; }
+
+  result = await yahooQuote(t.sym).catch(()=>null);
+  if (result) { setTile(t.idx, result.price, result.pct); return; }
+
+  result = await googleFinanceScrape(t.sym).catch(()=>null);
+  if (result) { setTile(t.idx, result.price, result.pct); return; }
+
+  result = await fmpQuote(t.fmpSym).catch(()=>null);
+  if (result) { setTile(t.idx, result.price, result.pct); return; }
+
+  setTileErr(t.idx);
+}
+
+async function fetchBTC() {
+  try {
+    const r = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
+    const d = await r.json();
+    const price = parseFloat(d.data.amount);
+    let pct = 0;
+    try {
+      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+      const d2 = await r2.json();
+      pct = d2.bitcoin?.usd_24h_change || 0;
+    } catch(e) {}
+    setTile(5, price, pct);
+  } catch(e) { setTileErr(5); }
+}
+
+async function fetchMarkets() {
+  await Promise.allSettled(TICKERS.map(t => fetchOneTicker(t)));
+  document.getElementById('market-updated').textContent = 'Updated ' + fmtAMPM(nowGST());
+}
+
+// ============================================================
+// BUSINESS NEWS — CNBC + BBC Business + Reuters via Google News
+// ============================================================
+function parseRSS(xml, count) {
+  try {
+    const doc = parseXML(xml);
+    const items = doc.querySelectorAll('item');
+    const out = [];
+    for (let i=0; i<Math.min(items.length,count); i++) {
+      const it = items[i];
+      const title = it.querySelector('title')?.textContent?.trim()||'';
+      const link = it.querySelector('link')?.textContent?.trim()||'';
+      const pubDate = it.querySelector('pubDate')?.textContent?.trim()||'';
+      if (title) out.push({title,link,pubDate});
+    }
+    return out;
+  } catch(e) { return []; }
+}
+
+async function fetchBizNews() {
+  const el = document.getElementById('biz-news');
+  const feeds = [
+    // CNBC Top News RSS
+    'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114',
+    // BBC Business RSS
+    'https://feeds.bbci.co.uk/news/business/rss.xml',
+    // MarketWatch top stories
+    'https://feeds.marketwatch.com/marketwatch/topstories/',
+    // Google News business
+    'https://news.google.com/rss/search?q=stock+market+economy&when:1d&hl=en-US&gl=US&ceid=US:en',
+  ];
+
+  for (const url of feeds) {
+    const text = await proxyFetch(url, 12000);
+    if (text && text.includes('<item')) {
+      let items = parseRSS(text, 8);
+      // Sort by date, take latest 5
+      items.sort((a,b) => {
+        const da=a.pubDate?new Date(a.pubDate).getTime():0;
+        const db=b.pubDate?new Date(b.pubDate).getTime():0;
+        return db-da;
+      });
+      items = items.slice(0, 5);
+      if (items.length > 0) {
+        el.innerHTML = items.map((it,i) => `
+          <div class="bloom-item">
+            <span class="bloom-num mono">${String(i+1).padStart(2,'0')}</span>
+            <div>
+              <a class="bloom-headline" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>
+              <div class="bloom-time mono">${it.pubDate ? relTime(it.pubDate) : ''}</div>
+            </div>
+          </div>
+        `).join('');
+        return;
+      }
+    }
+  }
+  el.innerHTML = '<div class="feed-error">Business news feeds unavailable</div>';
+}
+
+// ============================================================
+// BREAKING NEWS — AL JAZEERA + IRAN CONFLICT + ABC AUSTRALIA
+// ============================================================
+
+function renderItems(items, srcId) {
+  if (items.length===0) return '<div class="feed-error">Feed unavailable</div>';
+  return items.map(it => `
+    <div class="news-item src-${srcId}">
+      <a class="news-headline" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>
+      <div class="news-time mono">${it.pubDate?relTime(it.pubDate):''}</div>
+    </div>
+  `).join('');
+}
+
+async function fetchRSSFromUrls(urls, count) {
+  for (const url of urls) {
+    const text = await proxyFetch(url, 12000);
+    if (text && text.includes('<item')) {
+      const items = parseRSS(text, count);
+      if (items.length > 0) return items;
+    }
+  }
+  return [];
+}
+
+async function fetchNews() {
+  // 1. Al Jazeera general — top 5
+  const ajEl = document.getElementById('news-aj');
+  const ajItems = await fetchRSSFromUrls([
+    'https://www.aljazeera.com/xml/rss/all.xml',
+  ], 5);
+  if (ajItems.length > 0) {
+    ajEl.innerHTML = renderItems(ajItems, 'aj');
+  } else {
+    // Google News fallback
+    const gItems = await fetchRSSFromUrls([
+      'https://news.google.com/rss/search?q=site:aljazeera.com&hl=en-US&gl=US&ceid=US:en'
+    ], 5);
+    ajEl.innerHTML = renderItems(gItems, 'aj');
+  }
+
+  // 2. Iran Conflict — dedicated feed, 5 items
+  const iranEl = document.getElementById('news-iran');
+  const iranItems = await fetchRSSFromUrls([
+    // AJ Iran tag RSS
+    'https://www.aljazeera.com/xml/rss/all.xml',
+    // Google News: AJ Iran conflict coverage
+    'https://news.google.com/rss/search?q=site:aljazeera.com+iran+war+conflict&when:1d&hl=en-US&gl=US&ceid=US:en',
+    // Broader Iran war coverage
+    'https://news.google.com/rss/search?q=iran+war+strikes+conflict&when:1d&hl=en-US&gl=US&ceid=US:en',
+  ], 20);
+  // Filter for Iran-related headlines
+  const iranFiltered = iranItems.filter(it => {
+    const t = it.title.toLowerCase();
+    return t.includes('iran') || t.includes('tehran') || t.includes('hormuz') ||
+           t.includes('gulf') && (t.includes('attack') || t.includes('strike') || t.includes('war') || t.includes('conflict')) ||
+           t.includes('strait') || t.includes('irgc');
+  }).slice(0, 5);
+  iranEl.innerHTML = renderItems(iranFiltered.length > 0 ? iranFiltered : [], 'iran');
+
+  // 3. ABC News Australia — top 5
+  const abcEl = document.getElementById('news-abc');
+  const abcItems = await fetchRSSFromUrls([
+    'https://www.abc.net.au/news/feed/2942460/rss.xml',       // ABC top stories
+    'https://www.abc.net.au/news/feed/51120/rss.xml',          // ABC just in
+    'https://news.google.com/rss/search?q=site:abc.net.au&hl=en-AU&gl=AU&ceid=AU:en',
+  ], 5);
+  abcEl.innerHTML = renderItems(abcItems, 'abc');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  await Promise.all([fetchSports(), fetchMarkets(), fetchNews(), fetchBizNews()]);
+  setInterval(fetchSports, 60000);
+  setInterval(fetchMarkets, 120000);
+  setInterval(fetchNews, 300000);
+  setInterval(fetchBizNews, 300000);
+}
+init();
+
+if ('serviceWorker' in navigator) {
+  const sw = `self.addEventListener('fetch',e=>e.respondWith(fetch(e.request)));`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
+</script>
+</body>
+</html>
