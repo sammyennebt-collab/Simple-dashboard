@@ -229,15 +229,20 @@ const MY_TEAMS_EXACT = [
   'ac milan',
   'al hilal','al-hilal',
   'sydney fc',
+  'manchester city',
+  'brooklyn nets',
+  'sevilla',
+  'waratahs','nsw waratahs',
 ];
 const MY_TEAMS_PARTIAL = [
   'spurs',        // Tottenham shorthand
   'socceroos','wallabies','kangaroos', // Australian national teams
+  'man city',     // Manchester City shorthand
 ];
 
 // ESPN abbreviations for my teams
 // Note: 'CAN' omitted — ambiguous between Canterbury and Canberra Raiders
-const MY_ABBR = ['CBU','TOT','MIL','HIL','SYD','SWA','AUS'];
+const MY_ABBR = ['CBU','TOT','MIL','HIL','SYD','SWA','AUS','MCI','BKN','SEV'];
 
 function isMyTeam(name, abbr) {
   const n = (name||'').toLowerCase();
@@ -346,10 +351,15 @@ async function fetchSports() {
     return false;
   }).sort((a,b) => new Date(a.date) - new Date(b.date));
 
-  // === RECENT: my teams + all UCL results ===
+  // === RECENT: all NRL + UCL (last 24hrs) + my teams in any league ===
+  const oneDayAgo = Date.now() - 24*3600000;
   const recent = allEvents.filter(ev => {
     if (ev.state !== 'post') return false;
-    if (ev.tag === 'UCL') return true;
+    // All NRL results (user follows the league)
+    if (ev.tag === 'NRL') return true;
+    // UCL results from last 24 hours only
+    if (ev.tag === 'UCL' && new Date(ev.date).getTime() >= oneDayAgo) return true;
+    // My teams in any league
     if (isMyTeam(ev.homeName, ev.homeAbbr) || isMyTeam(ev.awayName, ev.awayAbbr)) return true;
     return false;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
